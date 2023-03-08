@@ -1,0 +1,67 @@
+---
+title: "central bank"
+author: "qiufei"
+date: "2016-06-08"
+output: 
+  html_document: 
+    fig_height: 7
+    fig_width: 9
+    keep_md: yes
+    number_sections: yes
+    theme: readable
+    toc: yes
+---
+
+设置
+
+```{r setup,Message=FALSE,echo=FALSE,include=FALSE,warning=FALSE}
+
+# load needed packages
+library(knitr)
+opts_chunk$set(Message=FALSE,echo=FALSE)
+library(ggplot2)
+library(reshape2)
+library(Quandl)
+Quandl.api_key("9iGeZZoG6Vc46rfs1AgJ")
+library(pdfetch)
+library(quantmod)
+options("getSymbols.warning4.0"=FALSE)
+library(scales)
+library(plyr)
+library(dplyr)
+options(warn=-1)          #suprress warning globally
+## the default is
+## options(warn=0)
+
+```
+
+# 人民银行资产负债表规模增速与cpi的关系 #
+
+物价指数环比增速与央行资产负债表的增速高度相关.
+
+
+```{r balanc sheet}
+#这里的quandl code代码最好用双引号，也是官方的做法。以前这里单引号在ubuntu下是运行通过了的，但是在mac上不行。mac下必须要用双引号。
+codes = c('PBCHINA/REP_04.11','NBSC/A01030101_M')
+names = c('date','pbc.asset','cpi')
+pbc = Quandl(codes)
+colnames(pbc) = names
+
+## drop those NA observations
+pbc2 = filter(pbc,date>'2005-12-31')
+## get growth rate
+## 这里的ROC函数来自TTR包，前面加在quandmod包的时候，会自动加载TTR包。
+pbc2[,2] = ROC(pbc2[,2],type = 'discrete')*100
+pbc2[,3] = pbc2[,3] - 100
+
+
+qfplot = function(dat,title){
+    inter = melt(dat,id = 'date')
+    ggplot(inter,aes(x = date,y = value,color = variable,shape = variable))+
+        geom_line()+
+        geom_point()+
+        ggtitle(title)}
+qfplot(pbc2,'人行资产增速与CPI环比增速之间的关系')
+
+
+```
